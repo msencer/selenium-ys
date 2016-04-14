@@ -1,59 +1,37 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import time
+import sys
+from config import configs
 from selenium import webdriver
+from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
-def wait_for(condition_function):
-    start_time = time.time()
-    while time.time() < start_time + 3:
-        if condition_function():
-            return True
-        else:
-            time.sleep(0.1)
-    raise Exception(
-        'Timeout waiting for {}'.format(condition_function.__name__)
-    )
-
-class wait_for_page_load(object):
-
-    def __init__(self, browser):
-        self.browser = browser
-
-    def __enter__(self):
-        self.old_page = self.browser.find_element_by_tag_name('html')
-
-    def page_has_loaded(self):
-        new_page = self.browser.find_element_by_tag_name('html')
-        return new_page.id != self.old_page.id
-
-    def __exit__(self, *_):
-        wait_for(self.page_has_loaded)
-
-
-USER_NAME = ''
-PASSWORD = ''
+USER_NAME = configs().user['email']
+PASSWORD = configs().user['password']
+ADDRESSID = configs().ys['address']
+PAYMENTMETHOD = configs().ys['payment']
 
 browser = webdriver.PhantomJS()
 browser.get('http://yemeksepeti.com/ankara')
 
+
 username = browser.find_element_by_name("UserName")
 username.send_keys(USER_NAME)
-
 password = browser.find_element_by_name("Password")
 password.send_keys(PASSWORD)
-
 button = browser.find_element_by_id('ys-fastlogin-button')
-
-#with wait_for_page_load(browser):
 button.click()
 
+wait = WebDriverWait(browser, 10)
+try:
+    element = wait.until(EC.presence_of_element_located((By.ID, "user-info")))
+except:
+    print "Time out"
+    sys.exit(1);
 print "Logged in"
-
-#html = browser.page_source
-#f = open('afterlogin.html','w+')
-#f.write(html.encode('utf8'))
-#f.close()
 
 script = """
 var options = {
@@ -80,8 +58,8 @@ function checkout(payload){
 $(document).ready(function () {
 var token = window.Globals.CurrentState.LoginToken;
 var basket = window.Globals.CurrentState.BasketId;
-var addressId = '62cfe1da-359d-4f6a-92e8-404048cba489'
-var paymentMethod = 'b93e2cf9-5d58-494e-b69a-3a7882f4e747'
+var addressId = '%s'
+var paymentMethod = '%s'
 
 var ysRequest = {"Token":token,"CatalogName":"TR_ANKARA","Culture":"tr-TR","LanguageId":"tr-TR"};
 var checkoutPayload = {'checkoutParameters' : {'IsCheckoutStep' : 'true', 'IsTakeAway' : 'true','BasketId' : basket,'AddressId' : addressId,'IsCampus' : 'true','IsFutureOrder' : 'false','PaymentMethodId' : paymentMethod,'SaveGreen' : 'true'},'ysRequest' : ysRequest};
@@ -89,11 +67,16 @@ var addPayload = {"quantity":"1","categoryName":"b228f939-65e8-48d1-8600-8d421a4
 
 options.url = 'https://service.yemeksepeti.com/YS.WebServices/OrderService.svc/AddProduct';
 options.data = JSON.stringify(addPayload);
-options.success = function(data){checkout(checkoutPayload);},
+options.success = function(){};
+//options.success = function(data){checkout(checkoutPayload);},
 setTimeout(function(){$.ajax(options);}, 3000);
 
 });
-"""
+""" % (ADDRESSID,PAYMENTMETHOD)
+
+jsres = browser.execute_script("return window.Globals.CurrentState.LoginToken;")
+print 'Login Token : ',jsres
 browser.execute_script(script)
-print "Script yerlestirildi"
-time.sleep(20)
+time.sleep(10)
+browser.refresh()
+browser.save_screenshot('screen.png') 
