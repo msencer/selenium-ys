@@ -1,3 +1,4 @@
+import os
 import xml.etree.ElementTree as ET
 def singleton(cls):
 	_instances = {}
@@ -9,7 +10,8 @@ def singleton(cls):
 @singleton
 class configs(object):
 	def __init__(self,xmlFile = "config.xml"):
-		conf = ET.parse(xmlFile)
+		f = os.path.join(os.path.dirname(os.path.realpath(__file__)),xmlFile)
+		conf = ET.parse(f)
 		root = conf.getroot()
 		self.members = {}
 		try:
