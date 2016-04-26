@@ -11,12 +11,16 @@ void setup(){
   Serial.begin(115200);
 
   // Lets listen for the hook response
-  Particle.subscribe("hook-response/get_weather", orderResponse, MY_DEVICES);
+  Particle.subscribe("hook-response/order_0001", orderResponse, MY_DEVICES);
+  //
+  // for(int i=0;i<10;i++) {
+  //   Serial.println("waiting " + String(10-i) + " seconds before we publish");
+  //   // delay(1000);
+  // }
+  //
 
-  for(int i=0;i<10;i++) {
-    Serial.println("waiting " + String(10-i) + " seconds before we publish");
-    // delay(1000);
-  }
+  delay(500);
+
   for (int i = 0; i < 3; i++) {
     digitalWrite(ledPin, HIGH);
     delay(500);
@@ -52,26 +56,13 @@ void buttonCallback(){
 
   digitalWrite(ledPin, HIGH);
   Serial.println("Requesting Order!");
-  Particle.publish("get_weather");
+  Particle.publish("order_0001");
 
 }
 
 void orderResponse(const char *name, const char *data) {
 
-  String str = String(data);
-  String locationStr = tryExtractString(str, "<location>", "</location>");
-  String weatherStr = tryExtractString(str, "<weather>", "</weather>");
-  String tempStr = tryExtractString(str, "<temp_f>", "</temp_f>");
-  String windStr = tryExtractString(str, "<wind_string>", "</wind_string>");
-
-  if (locationStr != NULL) {
-      Serial.println("At location: " + locationStr); }
-  if (weatherStr != NULL) {
-      Serial.println("The weather is: " + weatherStr); }
-  if (tempStr != NULL) {
-      Serial.println("The temp is: " + tempStr + String(" *F")); }
-  if (windStr != NULL) {
-      Serial.println("The wind is: " + windStr); }
+String str = String(data);
 
 }
 
